@@ -2,8 +2,8 @@ name: Scheduled deploy
 
 on:
   schedule:
-    - cron: "0 6 * * *"
-  workflow_dispatch:
+    - cron: "0 6 * * *"   # 毎日朝6時に実行
+  workflow_dispatch:       # 手動実行も可能
 
 jobs:
   build:
@@ -11,12 +11,15 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'  # ← ここを Node.js 20 に統一
+          node-version: '20'  # Node.js を 20 に固定
+
       - name: Install dependencies
         run: npm install
+
       - name: Run build
         run: npm run build
 
@@ -26,22 +29,27 @@ jobs:
     needs: build
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3  # ← v2 → v3 に修正
+        uses: actions/checkout@v3
+
       - name: Setup Node.js and cache
-        uses: actions/setup-node@v3  # ← v2 → v3 に修正
+        uses: actions/setup-node@v3
         with:
-          node-version: '20'        # ← Node.js 18 → 20 に変更
+          node-version: '20'
           cache: 'npm'
+
       - name: Install firebase-tools
         run: npm install --save-dev firebase-tools
+
       - name: Decode Firebase service account key
         run: |
           echo "${{ secrets.FIREBASE_KEY }}" | base64 -d > ./firebase-key.json
           echo "GOOGLE_APPLICATION_CREDENTIALS=${{ github.workspace }}/firebase-key.json" >> $GITHUB_ENV
+
       - name: Deploy to Firebase Hosting
         run: ./node_modules/.bin/firebase deploy --project ${{ secrets.FIREBASE_PROJECT_ID }}
         env:
           FIREBASE_CLI_EXPERIMENTS: webframeworks
+
       - name: Delete GOOGLE_APPLICATION_CREDENTIALS
-        run: rm $GOOGLE_APPLICATION_CREDENTIALS || true   # ← エラー回避のため || true を追加
+        run: rm $GOOGLE_APPLICATION_CREDENTIALS || true   # 変数未定義でもエラーにならないようにする
         if: ${{ always() }}
