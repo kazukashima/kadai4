@@ -45,6 +45,10 @@ jobs:
           echo "${{ secrets.FIREBASE_KEY }}" | base64 -d > ./firebase-key.json
           echo "GOOGLE_APPLICATION_CREDENTIALS=${{ github.workspace }}/firebase-key.json" >> $GITHUB_ENV
 
+      # 🔍 デバッグ用: Secrets の値を確認
+      - name: Debug Project ID
+        run: echo "Project ID = ${{ secrets.FIREBASE_PROJECT_ID }}"
+
       - name: Deploy to Firebase Hosting
         run: ./node_modules/.bin/firebase deploy --project ${{ secrets.FIREBASE_PROJECT_ID }}
         env:
