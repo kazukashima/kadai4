@@ -2,7 +2,7 @@ name: Scheduled deploy
 
 on:
   schedule:
-    - cron: "0 6 * * *"   # 毎日朝6時に実行
+    - cron: "0 6 * * *"
   workflow_dispatch:
 
 jobs:
@@ -44,18 +44,18 @@ jobs:
           echo "${{ secrets.FIREBASE_KEY }}" | base64 -d > ./firebase-key.json
           echo "GOOGLE_APPLICATION_CREDENTIALS=${{ github.workspace }}/firebase-key.json" >> $GITHUB_ENV
 
-      # 🔍 Debug Secrets
+      # 🔍 Debug Project ID
       - name: Debug Project ID
-        run: |
-          echo "Project ID (raw) = ${{ secrets.FIREBASE_PROJECT_ID }}"
-          if [ -z "${{ secrets.FIREBASE_PROJECT_ID }}" ]; then
-            echo "⚠️ FIREBASE_PROJECT_ID is EMPTY"
-            exit 1
-          else
-            echo "✅ FIREBASE_PROJECT_ID is set"
-          fi
+        run: echo "Project ID = $FIREBASE_PROJECT_ID"
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
 
       - name: Deploy to Firebase Hosting
-        run: ./node_modules/.bin/firebase deploy --project "${{ secrets.FIREBASE_PROJECT_ID }}"
+        run: ./node_modules/.bin/firebase deploy --project $FIREBASE_PROJECT_ID
         env:
+          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
           FIREBASE_CLI_EXPERIMENTS: webframeworks
+
+      - name: Delete GOOGLE_APPLICATION_CREDENTIALS
+        run: rm $GOOGLE_APPLICATION_CREDENTIALS || true
+        if: ${{ always() }}
