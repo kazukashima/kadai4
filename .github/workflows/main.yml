@@ -45,16 +45,11 @@ jobs:
           echo "${{ secrets.FIREBASE_KEY }}" | base64 -d > ./firebase-key.json
           echo "GOOGLE_APPLICATION_CREDENTIALS=${{ github.workspace }}/firebase-key.json" >> $GITHUB_ENV
 
-      # 🔍 デバッグ用: Secrets の値を確認
+      # 🔍 デバッグ: Project ID の確認 + CLI 上でプロジェクト存在チェック
       - name: Debug Project ID
         run: |
-          echo "Project ID (raw) = ${{ secrets.FIREBASE_PROJECT_ID }}"
-          if [ -z "${{ secrets.FIREBASE_PROJECT_ID }}" ]; then
-            echo "⚠️ FIREBASE_PROJECT_ID is EMPTY"
-          else
-            echo "✅ FIREBASE_PROJECT_ID is set"
-          fi
-
+          echo "Project ID = ${{ secrets.FIREBASE_PROJECT_ID }}"
+          ./node_modules/.bin/firebase projects:list | grep ${{ secrets.FIREBASE_PROJECT_ID }} || echo "❌ Project not found"
 
       - name: Deploy to Firebase Hosting
         run: ./node_modules/.bin/firebase deploy --project ${{ secrets.FIREBASE_PROJECT_ID }}
