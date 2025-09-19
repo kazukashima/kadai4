@@ -52,7 +52,7 @@ jobs:
         run: |
           echo "Project ID = ${{ secrets.FIREBASE_PROJECT_ID }}"
 
-      # ✅ Deploy のときに直接 project を指定
+      # ✅ Deploy のときに直接 project を指定する
       - name: Deploy to Firebase Hosting
         run: ./node_modules/.bin/firebase deploy --project ${{ secrets.FIREBASE_PROJECT_ID }}
         env:
