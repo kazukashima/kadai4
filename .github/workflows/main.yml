@@ -7,6 +7,7 @@ on:
 
 jobs:
   build:
+    name: build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -15,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'  # Node.js を 20 に固定
+          node-version: "20"
 
       - name: Install dependencies
         run: npm install
@@ -24,7 +25,7 @@ jobs:
         run: npm run build
 
   deploy:
-    name: Deploy
+    name: deploy
     runs-on: ubuntu-latest
     needs: build
     steps:
@@ -34,8 +35,8 @@ jobs:
       - name: Setup Node.js and cache
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: "20"
+          cache: "npm"
 
       - name: Install firebase-tools
         run: npm install --save-dev firebase-tools
@@ -45,17 +46,15 @@ jobs:
           echo "${{ secrets.FIREBASE_KEY }}" | base64 -d > ./firebase-key.json
           echo "GOOGLE_APPLICATION_CREDENTIALS=${{ github.workspace }}/firebase-key.json" >> $GITHUB_ENV
 
-      # 🔍 デバッグ: Project ID の確認 + CLI 上でプロジェクト存在チェック
-      - name: Debug Project ID
-        run: |
-          echo "Project ID = ${{ secrets.FIREBASE_PROJECT_ID }}"
-          ./node_modules/.bin/firebase projects:list | grep ${{ secrets.FIREBASE_PROJECT_ID }} || echo "❌ Project not found"
+      # 🔑 プロジェクトを切り替える（これが大事！）
+      - name: Select Firebase project
+        run: ./node_modules/.bin/firebase use ${{ secrets.FIREBASE_PROJECT_ID }}
 
       - name: Deploy to Firebase Hosting
-        run: ./node_modules/.bin/firebase deploy --project ${{ secrets.FIREBASE_PROJECT_ID }}
+        run: ./node_modules/.bin/firebase deploy
         env:
           FIREBASE_CLI_EXPERIMENTS: webframeworks
 
       - name: Delete GOOGLE_APPLICATION_CREDENTIALS
-        run: rm $GOOGLE_APPLICATION_CREDENTIALS || true   # 変数未定義でもエラーにならないようにする
+        run: rm $GOOGLE_APPLICATION_CREDENTIALS || true
         if: ${{ always() }}
