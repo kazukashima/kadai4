@@ -1,9 +1,10 @@
-name: Scheduled deploy
+name: deploy
 
 on:
-  schedule:
-    - cron: "0 6 * * *"   # 毎日朝6時に実行
-  workflow_dispatch:       # 手動実行も可能
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   build:
@@ -15,30 +16,28 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'  # Node.js を 20 に固定
+          node-version: 18
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Run build
-        run: npm run build
+      - name: Build project
+        run: npm run build   # dist/ ができる
 
   deploy:
-    name: deploy
     runs-on: ubuntu-latest
     needs: build
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js and cache
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: 18
 
       - name: Install firebase-tools
-        run: npm install --save-dev firebase-tools
+        run: npm install -g firebase-tools
 
       - name: Decode Firebase service account key
         run: |
@@ -47,22 +46,10 @@ jobs:
 
       - name: Debug Project ID
         run: echo "Project ID = $FIREBASE_PROJECT_ID"
-        env:
-          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-
-      # 👇 ここでサービスアカウントが見れるプロジェクト一覧を確認
-      - name: List Firebase projects (debug)
-        run: ./node_modules/.bin/firebase projects:list
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/firebase-key.json
 
       - name: Deploy to Firebase Hosting
-        run: ./node_modules/.bin/firebase deploy --project $FIREBASE_PROJECT_ID
-        env:
-          FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
-          FIREBASE_CLI_EXPERIMENTS: webframeworks
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/firebase-key.json
+        run: firebase deploy --project $FIREBASE_PROJECT_ID --only hosting
 
       - name: Delete GOOGLE_APPLICATION_CREDENTIALS
-        run: rm $GOOGLE_APPLICATION_CREDENTIALS || true
         if: ${{ always() }}
+        run: rm $GOOGLE_APPLICATION_CREDENTIALS
