@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: 18   # ← 20 → 18 に修正！
+          node-version: 22   # ← 20 → 18 に修正！
 
       - name: Install dependencies
         run: npm install
@@ -35,7 +35,7 @@ jobs:
       - name: Setup Node.js and cache
         uses: actions/setup-node@v3
         with:
-          node-version: 18   # ← ここも 18 に統一
+          node-version: 22   # ← ここも 18 に統一
           cache: npm
 
       - name: Install firebase-tools
