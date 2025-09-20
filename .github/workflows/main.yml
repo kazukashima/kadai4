@@ -2,33 +2,12 @@ name: Scheduled deploy
 
 on:
   schedule:
-    - cron: "0 6 * * *"   # 毎日朝6時に実行
-  workflow_dispatch:       # 手動実行も可能
+    - cron: "0 6 * * *"
+  workflow_dispatch:
 
 jobs:
   build:
-    name: build
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: 22   # Vite が Node 20+ 必須なので 22 を指定
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run build
-        run: npm run build
-
-  deploy:
-    name: deploy
-    runs-on: ubuntu-latest
-    needs: build
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -37,18 +16,46 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 22
-          cache: npm
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run build
+        run: npm run build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 22
+          cache: 'npm'
 
       - name: Install firebase-tools
         run: npm install -g firebase-tools
 
-      - name: Decode Firebase service account key
+      - name: Decode Firebase service account key (safe)
+        env:
+          FIREBASE_KEY: ${{ secrets.FIREBASE_KEY }}
         run: |
-          echo "${{ secrets.FIREBASE_KEY }}" | base64 -d > $GITHUB_WORKSPACE/firebase-key.json
+          # Secrets の値が CRLF を含んでいてもやり直せるよう tr -d '\r'
+          # printf を使って安全に出力（引用破壊を防ぐ）
+          printf '%s' "$FIREBASE_KEY" | tr -d '\r' | base64 -d > "$GITHUB_WORKSPACE/firebase-key.json"
           echo "GOOGLE_APPLICATION_CREDENTIALS=$GITHUB_WORKSPACE/firebase-key.json" >> $GITHUB_ENV
+          # 確認（デバッグ用、落とすときは消す）
+          echo "Decoded file size:"
+          ls -l "$GITHUB_WORKSPACE/firebase-key.json"
 
       - name: Deploy to Firebase Hosting
-        run: firebase deploy --only hosting --project $FIREBASE_PROJECT_ID
         env:
           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID }}
           GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/firebase-key.json
+        run: |
+          # --only hosting にしておくとホスティングだけデプロイ
+          firebase deploy --only hosting --project "$FIREBASE_PROJECT_ID"
