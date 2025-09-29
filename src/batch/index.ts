@@ -6,7 +6,6 @@ const supabase = createClient(
 )
 
 async function main() {
-
   const yesterday = new Date()
   yesterday.setDate(yesterday.getDate() - 1)
   const iso = yesterday.toISOString()
@@ -14,28 +13,29 @@ async function main() {
 
   console.log('削除対象日:', dateStr)
 
-  const {error:skillError}=await supabase.from('skills').delete().lt('created_at',`${dateStr}T23:59:59`)
+  // 1. user_skill を削除
+  const { error: skillError } = await supabase
+    .from('user_skill')
+    .delete()
+    .lt('created_at', `${dateStr}T23:59:59`)
 
-  const { error:userError } = await supabase
+  if (skillError) {
+    console.error('user_skill 削除エラー:', skillError)
+  } else {
+    console.log('Old user_skill deleted')
+  }
+
+  // 2. users を削除
+  const { error: userError } = await supabase
     .from('users')
     .delete()
     .lt('created_at', `${dateStr}T23:59:59`)
 
-    if(skillError){
-      console.log('スキル削除エラー:',skillError)
-    }else{
-      console.log('Old skills deleted')
-    }
-
   if (userError) {
-    console.error('削除エラー:', userError)
+    console.error('users 削除エラー:', userError)
   } else {
     console.log('Old users deleted')
   }
-
-
-  const {}
 }
-
 
 main()
