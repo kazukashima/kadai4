@@ -3,14 +3,14 @@
 // import "@testing-library/jest-dom";
 // import RegisterCard from "../pages/RegisterCard";
 
-// // ✅ navigate をモック
+// //  navigate をモック
 // const mockNavigate = jest.fn();
 // jest.mock("react-router-dom", () => ({
 //   ...jest.requireActual("react-router-dom"),
 //   useNavigate: () => mockNavigate,
 // }));
 
-// // ✅ supabase をモック
+// // supabase をモック
 // jest.mock("../../supabase", () => ({
 //   supabase: {
 //     from: jest.fn(() => ({
@@ -31,7 +31,7 @@
 //       await userEvent.click(screen.getByRole("button", { name: "登録" }));
 //     });
 
-//     // ✅ navigate("/") が呼ばれることを確認
+//     //  navigate("/") が呼ばれることを確認
 //     expect(mockNavigate).toHaveBeenCalledWith("/");
 //   });
 // });
